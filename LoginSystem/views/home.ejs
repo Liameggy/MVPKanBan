@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta user="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+</head>
+<style>
+    body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-family: Arial, sans-serif;
+        background-color: #f0f0f0;
+    }
+    h1, h2 {
+        margin-bottom: 20px;
+    }
+    button {
+        margin: 10px;
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        border: none;
+        border-radius: 5px;
+        background-color: #007BFF;
+        color: white;
+        transition: background-color 0.3s ease;
+    }
+    button:hover {
+        background-color: #0056b3;
+    }
+</style>
+<body>
+    <h2>You logged in! Good Job <span id='user'></span></h2> 
+    <button onclick="window.location.href='/'">Return</button>
+    <script>
+        function getQueryParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const params = {};
+            for (const [key, value] of urlParams.entries()) {
+                params[key] = value;
+            }
+            return params;
+        }
+
+        const queryParams = getQueryParams();
+        const user = queryParams.user;
+        const email = queryParams.email;
+        if (user) {
+            console.log("User's user from query params:", user);
+        } else {
+            console.log("No user parameter found in the URL.");
+        }
+        document.getElementById('user').textContent = user;
+        document.getElementById('email').textContent = email;
+    </script>
+</body>
+</html>

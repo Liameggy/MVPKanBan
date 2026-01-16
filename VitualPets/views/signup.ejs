@@ -44,6 +44,11 @@
         color: white;
         transition: background-color 0.3s ease;
     }
+    #outButton {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+    }
     button:hover {
         background-color: #0056b3;
     }
@@ -60,7 +65,7 @@
         <input type="password" id="password" name="password" required>
         <button type="submit">Sign Up</button>
     </form>
-    <button onclick="window.location.href='/'">Return</button>
+    <button id="outButton" onclick="window.location.href='/'">Return</button>
     <button onclick="window.location.href='/login'">Have an Account?</button>
 
 </body>

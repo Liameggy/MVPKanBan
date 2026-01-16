@@ -101,6 +101,10 @@ app.get('/home', (req,res) => {
 app.get('/error', (req, res) => {
     res.render('error.ejs');
 });
+app.get('/petpage', (req, res) => {
+    const user = req.query.user;
+    res.render('petpage.ejs', { user });
+});
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);

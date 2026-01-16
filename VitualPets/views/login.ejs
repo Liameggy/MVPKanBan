@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,6 +15,7 @@
         font-family: Arial, sans-serif;
         background-color: #f0f0f0;
     }
+
     form {
         display: flex;
         flex-direction: column;
@@ -22,9 +24,9 @@
         padding: 0px;
         border-radius: 5px;
     }
-    label {
-        margin-top: 10px;
-    }
+
+    
+
     input {
         margin-top: 5px;
         padding: 8px;
@@ -32,6 +34,7 @@
         border: 1px solid black;
         border-radius: 10px;
     }
+
     button {
         margin-top: 15px;
         padding: 10px 20px;
@@ -43,10 +46,18 @@
         color: white;
         transition: background-color 0.3s ease;
     }
+
+    #outButton {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+    }
+
     button:hover {
         background-color: #0056b3;
     }
 </style>
+
 <body>
     <h2>Login</h2>
     <form action="/login" method="POST">
@@ -56,7 +67,8 @@
         <input type="password" id="password" name="password" required>
         <button type="submit">Login</button>
     </form>
-    <button onclick="window.location.href='/'">Return</button>
+    <button id="outButton" onclick="window.location.href='/'">Return</button>
     <button onclick="window.location.href='/signup'">Don't have an Account?</button>
 </body>
+
 </html>

@@ -28,13 +28,19 @@
         color: white;
         transition: background-color 0.3s ease;
     }
+    #outButton {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+    }
     button:hover {
         background-color: #0056b3;
     }
 </style>
 <body>
     <h2>You logged in! Good Job <span id='user'></span></h2> 
-    <button onclick="window.location.href='/'">Return</button>
+    <button onclick="window.location.href='/petpage?user=' + encodeURIComponent(document.getElementById('user').textContent)">Go to Pet Page</button>
+    <button id="outButton" onclick="window.location.href='/'">Return</button>
     <script>
         function getQueryParams() {
             const urlParams = new URLSearchParams(window.location.search);

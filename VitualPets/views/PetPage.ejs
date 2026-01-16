@@ -47,6 +47,143 @@
     <h2>Welcome to your Pet Page, <span id="user"></span>!</h2>
     
     <button id="outButton" onclick="window.location.href='/'">Return</button>
+
+    <button id="createpet">Create New Pet</button>
+
+    <!-- Modal overlay -->
+    <div id="createPetOverlay" class="hidden" role="dialog" aria-modal="true" aria-labelledby="createPetTitle" tabindex="-1" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:1000;">
+        <div id="overlayBg" style="position:absolute;inset:0;background:rgba(0,0,0,0.5);"></div>
+        <div id="createPetModal" style="position:relative;background:#fff;border-radius:8px;padding:20px;max-width:90vw;width:420px;box-shadow:0 10px 30px rgba(0,0,0,0.25);z-index:1001;">
+            <h3 id="createPetTitle" style="margin-top:0;">Create New Pet</h3>
+            <label style="display:block;margin-bottom:8px;">
+                Name
+                <input id="petNameInput" type="text" style="width:100%;padding:8px;margin-top:6px;border:1px solid #ccc;border-radius:4px;" oninput="window.currentPetName = this.value" />
+            </label>
+            <label style="display:block;margin-bottom:12px;">
+                Type
+                <select id="petTypeSelect" style="width:100%;padding:8px;margin-top:6px;border:1px solid #ccc;border-radius:4px;">
+                    <option value="cat">Cat</option>
+                    <option value="dog">Dog</option>
+                    <option value="dragon">Dragon</option>
+                </select>
+            </label>
+            <div style="display:flex;gap:10px;justify-content:flex-end;">
+                <button id="cancelCreatePet" style="padding:8px 12px;background:#6c757d;color:#fff;border:none;border-radius:4px;cursor:pointer;">Cancel</button>
+                <button id="confirmCreatePet" style="padding:8px 12px;background:#007BFF;color:#fff;border:none;border-radius:4px;cursor:pointer;">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function(){
+            // helper to update petBox image based on type
+            function setPetBoxImage(type) {
+                const petBox = document.getElementById('petBox');
+                if (!petBox) return;
+                petBox.innerHTML = ''; // clear previous
+                const img = document.createElement('img');
+                img.src = 'images/' + type + '.png';
+                img.alt = type;
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.display = 'block';
+                img.style.objectFit = 'contain';
+                petBox.appendChild(img);
+            }
+
+            const typeSelect = document.getElementById('petTypeSelect');
+            const confirmBtn = document.getElementById('confirmCreatePet');
+
+            // also update petBox when user confirms creation
+            if (confirmBtn && typeSelect) {
+                confirmBtn.addEventListener('click', function(){
+                    if (window.currentPetName && window.currentPetName.trim() !== '') {
+                        setPetBoxImage(typeSelect.value);
+                    }
+                });
+            }
+        })();
+    </script>
+
+    <script>
+        (function(){
+            const createBtn = document.getElementById('createpet');
+            const overlay = document.getElementById('createPetOverlay');
+            const overlayBg = document.getElementById('overlayBg');
+            const modal = document.getElementById('createPetModal');
+            const cancelBtn = document.getElementById('cancelCreatePet');
+            const confirmBtn = document.getElementById('confirmCreatePet');
+            const nameInput = document.getElementById('petNameInput');
+
+            function showOverlay() {
+                overlay.classList.remove('hidden');
+                overlay.style.display = 'flex';
+                // focus first input for accessibility
+                setTimeout(() => nameInput.focus(), 50);
+                document.body.style.overflow = 'hidden';
+            }
+
+            function hideOverlay() {
+                overlay.classList.add('hidden');
+                overlay.style.display = 'none';
+                document.body.style.overflow = '';
+                createBtn.focus();
+            }
+
+            createBtn.addEventListener('click', showOverlay);
+            cancelBtn.addEventListener('click', hideOverlay);
+
+            // close when clicking the dark background (but not the modal)
+            overlayBg.addEventListener('click', hideOverlay);
+
+            // close on Escape
+            document.addEventListener('keydown', function(e){
+                if (e.key === 'Escape' && overlay.style.display === 'flex') hideOverlay();
+            });
+
+            // example confirm handler (replace with real logic)
+            confirmBtn.addEventListener('click', function(){
+                const name = nameInput.value.trim();
+                const type = document.getElementById('petTypeSelect').value;
+                if (!name) {
+                    nameInput.focus();
+                    return;
+                }
+                // placeholder: show created pet in console and close modal
+                console.log('Creating pet:', { name, type });
+                hideOverlay();
+            });
+        })();
+    </script>
+
+    <div id="petNameContainer" aria-live="polite" style="margin:12px 0;font-weight:600;"></div>
+    <script>
+    (function(){
+        const container = document.getElementById('petNameContainer');
+        function render(name){
+            if (name && name.trim() !== '') container.textContent = name;
+            else container.textContent = '';
+        }
+
+        // initial render
+        render(window.currentPetName);
+
+        // also update when creation is confirmed
+        const confirmBtn = document.getElementById('confirmCreatePet');
+        if (confirmBtn) confirmBtn.addEventListener('click', () => render(window.currentPetName));
+    })();
+    </script>
+
+    <div id="petBox" style="width:67vmin;height:67vmin;display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+        
+    </div>
+
+    <div style="display:inline-flex; gap:10px; align-items:center;">
+        <button id="playpet1" style="display:inline-block;">Pet pet</button>
+        <button id="playpet2" style="display:inline-block;">Feed pet</button>
+        <button id="playpet3" style="display:inline-block;">Play with pet</button>
+    </div>
+
     <script>
         function getQueryParams() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -65,6 +202,23 @@
             console.log("No user parameter found in the URL.");
         }
         document.getElementById('user').textContent = user;
+
+        document.getElementById('playpet1').addEventListener('click', function() {
+            if (window.currentPetName && window.currentPetName.trim() !== '') {
+                alert(window.currentPetName + ' seems happy!');
+            }
+
+        });
+        document.getElementById('playpet2').addEventListener('click', function() {
+            if (window.currentPetName && window.currentPetName.trim() !== '') {
+                alert('You fed ' + window.currentPetName + '!');
+            }
+        });
+        document.getElementById('playpet3').addEventListener('click', function() {
+            if (window.currentPetName && window.currentPetName.trim() !== '') {
+                alert('You played with ' + window.currentPetName + '!');
+            }
+        });
     </script>
 </body>
 

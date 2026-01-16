@@ -11,6 +11,7 @@ const SECRET_KEY = 'keep_this_secret';
 app.set('trust proxy', true);
 app.set('view engine', 'ejs');
 app.set("views", path.join(__dirname, "views"));
+app.use(express.static('public'));
 
 app.get('/', (req, res) => {
     res.render('index.ejs');
@@ -105,7 +106,10 @@ app.get('/petpage', (req, res) => {
     const user = req.query.user;
     res.render('petpage.ejs', { user });
 });
-
+app.get('/map', (req, res) => {
+    res.render('map.ejs');
+});
+    
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });

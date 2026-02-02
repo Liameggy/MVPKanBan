@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS UserInventory (
     username TEXT NOT NULL,
     item_id INTEGER NOT NULL,
     quantity INTEGER NOT NULL DEFAULT 1,
+    UNIQUE(username, item_id),
     FOREIGN KEY(item_id) REFERENCES Items(id)
 );
 

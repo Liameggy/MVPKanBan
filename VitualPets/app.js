@@ -125,12 +125,12 @@ app.get('/api/items', (req, res) => {
     db.all('SELECT * FROM Items', [], (err, rows) => {
         if (err) {
             console.error(err.message);
+            db.close();
             return res.status(500).json({ error: 'Database error' });
         }
         res.json(rows);
+        db.close();
     });
-
-    db.close();
 });
 
 app.get('/api/balance/:username', (req, res) => {
@@ -145,6 +145,7 @@ app.get('/api/balance/:username', (req, res) => {
     db.get('SELECT coins FROM Users WHERE username = ?', [username], (err, row) => {
         if (err) {
             console.error(err.message);
+            db.close();
             return res.status(500).json({ error: 'Database error' });
         }
         if (row) {
@@ -152,9 +153,8 @@ app.get('/api/balance/:username', (req, res) => {
         } else {
             res.status(404).json({ error: 'User not found' });
         }
+        db.close();
     });
-
-    db.close();
 });
 
 app.post('/api/buy', bodyParser.json(), (req, res) => {
@@ -207,20 +207,35 @@ app.post('/api/buy', bodyParser.json(), (req, res) => {
                     if (existing) {
                         // Update quantity
                         db.run('UPDATE UserInventory SET quantity = quantity + 1 WHERE username = ? AND item_id = ?', [username, itemId], (err) => {
-                            db.close();
                             if (err) {
+                                db.close();
                                 return res.status(500).json({ error: 'Transaction failed' });
                             }
                             res.json({ success: true, balance: user.coins - item.price });
+                            db.close();
                         });
                     } else {
-                        // Insert new item
-                        db.run('INSERT INTO UserInventory (username, item_id, quantity) VALUES (?, ?, 1)', [username, itemId], (err) => {
-                            db.close();
+                        // Insert new item - use INSERT OR IGNORE to handle race conditions
+                        db.run('INSERT OR IGNORE INTO UserInventory (username, item_id, quantity) VALUES (?, ?, 1)', [username, itemId], function(err) {
                             if (err) {
+                                db.close();
                                 return res.status(500).json({ error: 'Transaction failed' });
                             }
-                            res.json({ success: true, balance: user.coins - item.price });
+                            // Check if insert succeeded (changes will be 1) or was ignored (changes will be 0)
+                            if (this.changes === 0) {
+                                // Item was already added by concurrent request, update quantity instead
+                                db.run('UPDATE UserInventory SET quantity = quantity + 1 WHERE username = ? AND item_id = ?', [username, itemId], (err) => {
+                                    if (err) {
+                                        db.close();
+                                        return res.status(500).json({ error: 'Transaction failed' });
+                                    }
+                                    res.json({ success: true, balance: user.coins - item.price });
+                                    db.close();
+                                });
+                            } else {
+                                res.json({ success: true, balance: user.coins - item.price });
+                                db.close();
+                            }
                         });
                     }
                 });
@@ -246,12 +261,12 @@ app.get('/api/inventory/:username', (req, res) => {
     `, [username], (err, rows) => {
         if (err) {
             console.error(err.message);
+            db.close();
             return res.status(500).json({ error: 'Database error' });
         }
         res.json(rows);
+        db.close();
     });
-
-    db.close();
 });
 
 app.post('/api/sell', bodyParser.json(), (req, res) => {

@@ -180,13 +180,32 @@
                 items.forEach(item => {
                     const card = document.createElement('div');
                     card.className = 'item-card';
-                    card.innerHTML = `
-                        <div class="item-name">${item.name}</div>
-                        <div class="item-type">${item.type}</div>
-                        <div class="item-description">${item.description}</div>
-                        <div class="item-price">💰 ${item.price} coins</div>
-                        <button onclick="buyItem(${item.id}, ${item.price})">Buy</button>
-                    `;
+                    
+                    const itemName = document.createElement('div');
+                    itemName.className = 'item-name';
+                    itemName.textContent = item.name;
+                    
+                    const itemType = document.createElement('div');
+                    itemType.className = 'item-type';
+                    itemType.textContent = item.type;
+                    
+                    const itemDesc = document.createElement('div');
+                    itemDesc.className = 'item-description';
+                    itemDesc.textContent = item.description;
+                    
+                    const itemPrice = document.createElement('div');
+                    itemPrice.className = 'item-price';
+                    itemPrice.textContent = '💰 ' + item.price + ' coins';
+                    
+                    const buyBtn = document.createElement('button');
+                    buyBtn.textContent = 'Buy';
+                    buyBtn.addEventListener('click', () => buyItem(item.id, item.price));
+                    
+                    card.appendChild(itemName);
+                    card.appendChild(itemType);
+                    card.appendChild(itemDesc);
+                    card.appendChild(itemPrice);
+                    card.appendChild(buyBtn);
                     container.appendChild(card);
                 });
             } catch (error) {

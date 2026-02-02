@@ -217,14 +217,37 @@
                     const sellPrice = Math.floor(item.price * 0.5);
                     const card = document.createElement('div');
                     card.className = 'item-card';
-                    card.innerHTML = `
-                        <div class="item-name">${item.name}</div>
-                        <div class="item-type">${item.type}</div>
-                        <div class="item-description">${item.description}</div>
-                        <div class="item-quantity">Quantity: ${item.quantity}</div>
-                        <div class="item-sell-price">💰 Sell for ${sellPrice} coins (50% of ${item.price})</div>
-                        <button onclick="sellItem(${item.id}, ${sellPrice})">Sell One</button>
-                    `;
+                    
+                    const itemName = document.createElement('div');
+                    itemName.className = 'item-name';
+                    itemName.textContent = item.name;
+                    
+                    const itemType = document.createElement('div');
+                    itemType.className = 'item-type';
+                    itemType.textContent = item.type;
+                    
+                    const itemDesc = document.createElement('div');
+                    itemDesc.className = 'item-description';
+                    itemDesc.textContent = item.description;
+                    
+                    const itemQty = document.createElement('div');
+                    itemQty.className = 'item-quantity';
+                    itemQty.textContent = 'Quantity: ' + item.quantity;
+                    
+                    const itemSellPrice = document.createElement('div');
+                    itemSellPrice.className = 'item-sell-price';
+                    itemSellPrice.textContent = '💰 Sell for ' + sellPrice + ' coins (50% of ' + item.price + ')';
+                    
+                    const sellBtn = document.createElement('button');
+                    sellBtn.textContent = 'Sell One';
+                    sellBtn.addEventListener('click', () => sellItem(item.id, sellPrice));
+                    
+                    card.appendChild(itemName);
+                    card.appendChild(itemType);
+                    card.appendChild(itemDesc);
+                    card.appendChild(itemQty);
+                    card.appendChild(itemSellPrice);
+                    card.appendChild(sellBtn);
                     container.appendChild(card);
                 });
             } catch (error) {

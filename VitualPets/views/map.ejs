@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map</title>
+</head>
+<style>
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #000;
+    }
+    #mapCanvas {
+        height: 90vmin;
+        width: 90vmin;
+        
+    }
+    
+</style>
+<body>
+    <canvas id="mapCanvas" ></canvas>
+    <img id="mapImage" src="/images/map.png" alt="Map Image" style="display:none;">
+    <script>
+        const canvas = document.getElementById('mapCanvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        canvas.width = 2048;
+        canvas.height = 2048;
+        img.onload = function() {
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        };
+
+        img.src = '/images/map.png';
+        // add buttons on the map
+        canvas.addEventListener('click', function(event) {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            const percentX = (x / rect.width) * 100;
+            const percentY = (y / rect.height) * 100;
+            if (percentX >= 44 && percentX <= 49 && percentY >= 56 && percentY <= 59) {
+                alert('You clicked on the building!');
+                window.location.href = '/shop';
+            }
+        });
+    </script>
+</body>
+</html>

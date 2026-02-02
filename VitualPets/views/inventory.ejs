@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pet Shop</title>
+    <title>My Inventory</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -30,7 +30,7 @@
             font-weight: bold;
             color: #007BFF;
         }
-        .shop-container {
+        .inventory-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             gap: 20px;
@@ -67,7 +67,12 @@
             margin-bottom: 10px;
             color: #495057;
         }
-        .item-price {
+        .item-quantity {
+            font-size: 16px;
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+        .item-sell-price {
             font-size: 18px;
             color: #28a745;
             margin-bottom: 15px;
@@ -79,12 +84,12 @@
             cursor: pointer;
             border: none;
             border-radius: 5px;
-            background-color: #007BFF;
+            background-color: #28a745;
             color: white;
             transition: background-color 0.3s ease;
         }
         button:hover {
-            background-color: #0056b3;
+            background-color: #218838;
         }
         button:disabled {
             background-color: #ccc;
@@ -93,6 +98,10 @@
         .back-button {
             margin-top: 20px;
             max-width: 200px;
+            background-color: #007BFF;
+        }
+        .back-button:hover {
+            background-color: #0056b3;
         }
         .message {
             position: fixed;
@@ -112,6 +121,17 @@
             background-color: #dc3545;
             color: white;
         }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .empty-state h2 {
+            color: #666;
+            margin-bottom: 20px;
+        }
         .nav-links {
             margin-top: 20px;
             display: flex;
@@ -121,19 +141,19 @@
 </head>
 <body>
     <div class="header">
-        <h1>Pet Shop</h1>
+        <h1>My Inventory</h1>
         <div class="balance">Coins: <span id="balance">0</span></div>
     </div>
 
     <div id="message" class="message"></div>
 
-    <div class="shop-container" id="shopContainer">
-        <!-- Items will be loaded here -->
+    <div class="inventory-container" id="inventoryContainer">
+        <!-- Inventory items will be loaded here -->
     </div>
 
     <div class="nav-links">
         <button class="back-button" onclick="window.location.href='/home?user=' + encodeURIComponent(getUsername())">Back to Home</button>
-        <button class="back-button" onclick="window.location.href='/inventory?user=' + encodeURIComponent(getUsername())">View Inventory</button>
+        <button class="back-button" onclick="window.location.href='/shop?user=' + encodeURIComponent(getUsername())">Go to Shop</button>
     </div>
 
     <script>
@@ -170,46 +190,58 @@
             }
         }
 
-        async function loadItems() {
-            try {
-                const response = await fetch('/api/items');
-                const items = await response.json();
-                const container = document.getElementById('shopContainer');
-                container.innerHTML = '';
-
-                items.forEach(item => {
-                    const card = document.createElement('div');
-                    card.className = 'item-card';
-                    card.innerHTML = `
-                        <div class="item-name">${item.name}</div>
-                        <div class="item-type">${item.type}</div>
-                        <div class="item-description">${item.description}</div>
-                        <div class="item-price">💰 ${item.price} coins</div>
-                        <button onclick="buyItem(${item.id}, ${item.price})">Buy</button>
-                    `;
-                    container.appendChild(card);
-                });
-            } catch (error) {
-                console.error('Error loading items:', error);
-                showMessage('Failed to load items', 'error');
-            }
-        }
-
-        async function buyItem(itemId, price) {
+        async function loadInventory() {
             const username = getUsername();
             if (!username) {
                 showMessage('Please login first', 'error');
                 return;
             }
 
-            const currentBalance = parseInt(document.getElementById('balance').textContent);
-            if (currentBalance < price) {
-                showMessage('Insufficient funds!', 'error');
+            try {
+                const response = await fetch(`/api/inventory/${username}`);
+                const items = await response.json();
+                const container = document.getElementById('inventoryContainer');
+                container.innerHTML = '';
+
+                if (items.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <h2>Your inventory is empty</h2>
+                            <p>Visit the shop to buy items!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                items.forEach(item => {
+                    const sellPrice = Math.floor(item.price * 0.5);
+                    const card = document.createElement('div');
+                    card.className = 'item-card';
+                    card.innerHTML = `
+                        <div class="item-name">${item.name}</div>
+                        <div class="item-type">${item.type}</div>
+                        <div class="item-description">${item.description}</div>
+                        <div class="item-quantity">Quantity: ${item.quantity}</div>
+                        <div class="item-sell-price">💰 Sell for ${sellPrice} coins (50% of ${item.price})</div>
+                        <button onclick="sellItem(${item.id}, ${sellPrice})">Sell One</button>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Error loading inventory:', error);
+                showMessage('Failed to load inventory', 'error');
+            }
+        }
+
+        async function sellItem(itemId, sellPrice) {
+            const username = getUsername();
+            if (!username) {
+                showMessage('Please login first', 'error');
                 return;
             }
 
             try {
-                const response = await fetch('/api/buy', {
+                const response = await fetch('/api/sell', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -219,20 +251,22 @@
 
                 const data = await response.json();
                 if (data.success) {
-                    showMessage('Item purchased successfully!', 'success');
+                    showMessage(`Item sold for ${sellPrice} coins!`, 'success');
                     document.getElementById('balance').textContent = data.balance;
+                    // Reload inventory to reflect changes
+                    loadInventory();
                 } else {
-                    showMessage(data.error || 'Purchase failed', 'error');
+                    showMessage(data.error || 'Sale failed', 'error');
                 }
             } catch (error) {
-                console.error('Error buying item:', error);
-                showMessage('Purchase failed', 'error');
+                console.error('Error selling item:', error);
+                showMessage('Sale failed', 'error');
             }
         }
 
         // Load data on page load
         loadBalance();
-        loadItems();
+        loadInventory();
     </script>
 </body>
 </html>

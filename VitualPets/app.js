@@ -112,6 +112,228 @@ app.get('/petpage', (req, res) => {
 app.get('/map', (req, res) => {
     res.render('map.ejs');
 });
+
+// API endpoints for shop functionality
+app.get('/api/items', (req, res) => {
+    const db = new sqlite3.Database('./data.db', sqlite3.OPEN_READONLY, (err) => {
+        if (err) {
+            console.error(err.message);
+            return res.status(500).json({ error: 'Database error' });
+        }
+    });
+
+    db.all('SELECT * FROM Items', [], (err, rows) => {
+        if (err) {
+            console.error(err.message);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        res.json(rows);
+    });
+
+    db.close();
+});
+
+app.get('/api/balance/:username', (req, res) => {
+    const username = req.params.username;
+    const db = new sqlite3.Database('./data.db', sqlite3.OPEN_READONLY, (err) => {
+        if (err) {
+            console.error(err.message);
+            return res.status(500).json({ error: 'Database error' });
+        }
+    });
+
+    db.get('SELECT coins FROM Users WHERE username = ?', [username], (err, row) => {
+        if (err) {
+            console.error(err.message);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        if (row) {
+            res.json({ balance: row.coins });
+        } else {
+            res.status(404).json({ error: 'User not found' });
+        }
+    });
+
+    db.close();
+});
+
+app.post('/api/buy', bodyParser.json(), (req, res) => {
+    const { username, itemId } = req.body;
+
+    if (!username || !itemId) {
+        return res.status(400).json({ error: 'Username and itemId required' });
+    }
+
+    const db = new sqlite3.Database('./data.db', sqlite3.OPEN_READWRITE, (err) => {
+        if (err) {
+            console.error(err.message);
+            return res.status(500).json({ error: 'Database error' });
+        }
+    });
+
+    // Get item price
+    db.get('SELECT price FROM Items WHERE id = ?', [itemId], (err, item) => {
+        if (err || !item) {
+            db.close();
+            return res.status(404).json({ error: 'Item not found' });
+        }
+
+        // Get user balance
+        db.get('SELECT coins FROM Users WHERE username = ?', [username], (err, user) => {
+            if (err || !user) {
+                db.close();
+                return res.status(404).json({ error: 'User not found' });
+            }
+
+            if (user.coins < item.price) {
+                db.close();
+                return res.status(400).json({ error: 'Insufficient funds' });
+            }
+
+            // Deduct coins and add to inventory
+            db.run('UPDATE Users SET coins = coins - ? WHERE username = ?', [item.price, username], (err) => {
+                if (err) {
+                    db.close();
+                    return res.status(500).json({ error: 'Transaction failed' });
+                }
+
+                // Check if user already has this item
+                db.get('SELECT * FROM UserInventory WHERE username = ? AND item_id = ?', [username, itemId], (err, existing) => {
+                    if (err) {
+                        db.close();
+                        return res.status(500).json({ error: 'Transaction failed' });
+                    }
+
+                    if (existing) {
+                        // Update quantity
+                        db.run('UPDATE UserInventory SET quantity = quantity + 1 WHERE username = ? AND item_id = ?', [username, itemId], (err) => {
+                            db.close();
+                            if (err) {
+                                return res.status(500).json({ error: 'Transaction failed' });
+                            }
+                            res.json({ success: true, balance: user.coins - item.price });
+                        });
+                    } else {
+                        // Insert new item
+                        db.run('INSERT INTO UserInventory (username, item_id, quantity) VALUES (?, ?, 1)', [username, itemId], (err) => {
+                            db.close();
+                            if (err) {
+                                return res.status(500).json({ error: 'Transaction failed' });
+                            }
+                            res.json({ success: true, balance: user.coins - item.price });
+                        });
+                    }
+                });
+            });
+        });
+    });
+});
+
+app.get('/api/inventory/:username', (req, res) => {
+    const username = req.params.username;
+    const db = new sqlite3.Database('./data.db', sqlite3.OPEN_READONLY, (err) => {
+        if (err) {
+            console.error(err.message);
+            return res.status(500).json({ error: 'Database error' });
+        }
+    });
+
+    db.all(`
+        SELECT i.id, i.name, i.description, i.price, i.type, ui.quantity
+        FROM UserInventory ui
+        JOIN Items i ON ui.item_id = i.id
+        WHERE ui.username = ?
+    `, [username], (err, rows) => {
+        if (err) {
+            console.error(err.message);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        res.json(rows);
+    });
+
+    db.close();
+});
+
+app.post('/api/sell', bodyParser.json(), (req, res) => {
+    const { username, itemId } = req.body;
+
+    if (!username || !itemId) {
+        return res.status(400).json({ error: 'Username and itemId required' });
+    }
+
+    const db = new sqlite3.Database('./data.db', sqlite3.OPEN_READWRITE, (err) => {
+        if (err) {
+            console.error(err.message);
+            return res.status(500).json({ error: 'Database error' });
+        }
+    });
+
+    // Get item price (sell for 50% of original price)
+    db.get('SELECT price FROM Items WHERE id = ?', [itemId], (err, item) => {
+        if (err || !item) {
+            db.close();
+            return res.status(404).json({ error: 'Item not found' });
+        }
+
+        const sellPrice = Math.floor(item.price * 0.5);
+
+        // Check if user has this item
+        db.get('SELECT quantity FROM UserInventory WHERE username = ? AND item_id = ?', [username, itemId], (err, inventory) => {
+            if (err || !inventory) {
+                db.close();
+                return res.status(404).json({ error: 'Item not in inventory' });
+            }
+
+            // Add coins to user
+            db.run('UPDATE Users SET coins = coins + ? WHERE username = ?', [sellPrice, username], (err) => {
+                if (err) {
+                    db.close();
+                    return res.status(500).json({ error: 'Transaction failed' });
+                }
+
+                if (inventory.quantity > 1) {
+                    // Decrease quantity
+                    db.run('UPDATE UserInventory SET quantity = quantity - 1 WHERE username = ? AND item_id = ?', [username, itemId], (err) => {
+                        if (err) {
+                            db.close();
+                            return res.status(500).json({ error: 'Transaction failed' });
+                        }
+                        
+                        // Get updated balance
+                        db.get('SELECT coins FROM Users WHERE username = ?', [username], (err, user) => {
+                            db.close();
+                            if (err || !user) {
+                                return res.status(500).json({ error: 'Could not fetch balance' });
+                            }
+                            res.json({ success: true, balance: user.coins });
+                        });
+                    });
+                } else {
+                    // Remove item from inventory
+                    db.run('DELETE FROM UserInventory WHERE username = ? AND item_id = ?', [username, itemId], (err) => {
+                        if (err) {
+                            db.close();
+                            return res.status(500).json({ error: 'Transaction failed' });
+                        }
+                        
+                        // Get updated balance
+                        db.get('SELECT coins FROM Users WHERE username = ?', [username], (err, user) => {
+                            db.close();
+                            if (err || !user) {
+                                return res.status(500).json({ error: 'Could not fetch balance' });
+                            }
+                            res.json({ success: true, balance: user.coins });
+                        });
+                    });
+                }
+            });
+        });
+    });
+});
+
+app.get('/inventory', (req, res) => {
+    res.render('inventory.ejs');
+});
     
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);

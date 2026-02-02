@@ -102,6 +102,9 @@ app.get('/home', (req,res) => {
 app.get('/error', (req, res) => {
     res.render('error.ejs');
 });
+app.get('/shop', (req, res) => {
+    res.render('shop.ejs');
+});
 app.get('/petpage', (req, res) => {
     const user = req.query.user;
     res.render('petpage.ejs', { user });

@@ -40,6 +40,8 @@
 <body>
     <h2>You logged in, <span id='user'></span></h2> 
     <button onclick="window.location.href='/petpage?user=' + encodeURIComponent(document.getElementById('user').textContent)">Go to Pet Page</button>
+    <button onclick="window.location.href='/shop?user=' + encodeURIComponent(document.getElementById('user').textContent)">Go to Shop</button>
+    <button onclick="window.location.href='/inventory?user=' + encodeURIComponent(document.getElementById('user').textContent)">View Inventory</button>
     <button onclick="window.location.href='/map?user=' + encodeURIComponent(document.getElementById('user').textContent)">Go to Map</button>
     <button id="outButton" onclick="window.location.href='/'">Return</button>
     <script>

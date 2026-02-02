@@ -43,8 +43,10 @@
             const percentX = (x / rect.width) * 100;
             const percentY = (y / rect.height) * 100;
             if (percentX >= 44 && percentX <= 49 && percentY >= 56 && percentY <= 59) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const user = urlParams.get('user') || '';
                 alert('You clicked on the building!');
-                window.location.href = '/shop';
+                window.location.href = '/shop?user=' + encodeURIComponent(user);
             }
         });
     </script>

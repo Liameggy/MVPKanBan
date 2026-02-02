@@ -1,1 +1,4 @@
 /VitualPets/node_modules
+/VitualPets/data.db
+/VitualPets/DataBase/*.db
+/VitualPets/DataBase/*.db-journal

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fishing Minigame</title>
+</head>
+<style>
+    body {
+        display:inline;
+        justify-content: center;
+        align-items: center;
+        height: 10vh;
+        margin: 0;
+    }
+
+    #mapCanvas {
+        height: 90vmin;
+        width: 90vmin;
+
+    }
+
+    button {
+        margin: 10px;
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        border: none;
+        border-radius: 5px;
+        background-color: #007BFF;
+        color: white;
+        transition: background-color 0.3s ease;
+    }
+
+    .outButton {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+    }
+    .gameButton {
+        position: static;
+        margin: 10px;
+        padding: 10px 20px 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        border: none;
+        border-radius: 5px;
+        background-color: #28a745;
+        color: white;
+        transition: background-color 0.3s ease;
+    }
+    .message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+        }
+        .message.success {
+            background-color: #28a745;
+            color: white;
+        }
+        .message.error {
+            background-color: #dc3545;
+            color: white;
+        }
+</style>
+<div id="name">Welcome, <span id="username"></span>!</div><br>
+<div id="balance">Your balance: $<span id="balanceValue">0</span> coins</div><br>
+<div id="fishCount">This is how many fish you caught: <span id="fishCountValue">0</span></div><br>
+<div>Each fish is worth 10 coins!</div>
+
+
+<body>
+    <div id="message" style="display:none; position:fixed; top:50px; left:50%; transform:translateX(-50%); padding:10px 20px; border-radius:5px; color:white;"></div>
+
+    <img id="todd" src="/images/todd.gif" alt="Todd the Fisherman"
+        style="position:fixed; bottom:10px; left:10px; width:150px; height:100px;">
+    <canvas id="fishingCanvas" width="800" height="600"
+        style="border:1px solid #000000; display:block; margin:0 auto; background-color:#87CEEB;"></canvas>
+    <button class="outButton" onclick="window.location.href='/map?user=' + encodeURIComponent(getUsername())">Back to
+        Map</button>
+    <button class="gameButton" onclick="startFishing()">Start Game</button><br>
+    <button class="gameButton" onclick="stopFishing()">Stop Game</button>
+</body>
+<script>
+    username = getUsername();
+    document.getElementById('username').textContent = username;
+    const canvas = document.getElementById('fishingCanvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    img.src = '/images/fish.png';
+    let fishing = false;
+    let fishX = 0;
+    let fishY = 0;
+    let fishCount = 0;
+    function draw() {
+        // create fish 
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        fishX = Math.random() * (canvas.width - 50);
+        fishY = Math.random() * (canvas.height - 50);
+        ctx.drawImage(img, fishX, fishY, 50, 50);
+    }
+    function startFishing() {
+        fishing = true;
+        draw();
+        gameLoop();
+    }
+    function stopFishing() {
+        fishing = false;
+        reload();
+    }
+    function reload() {
+        location.reload();
+    }
+    function gameLoop() {
+        if (fishing) {
+            setTimeout(() => {
+                draw();
+                update();
+                requestAnimationFrame(gameLoop);
+            }, 750);
+        }
+    }
+    function update() {
+        // update game state
+    }
+    canvas.addEventListener('click', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        if (x > fishX && x < fishX + 50 && y > fishY && y < fishY + 50) {
+            fishCount++;
+            document.getElementById('fishCountValue').textContent = fishCount;
+            addMoney(10);
+        }
+    });
+    function getUsername() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('user') || '';
+    }
+
+    function showMessage(text, type) {
+        const messageEl = document.getElementById('message');
+        messageEl.textContent = text;
+        messageEl.className = 'message ' + type;
+        messageEl.style.display = 'block';
+        setTimeout(() => {
+            messageEl.style.display = 'none';
+        }, 3000);
+    }
+
+    async function loadBalance() {
+        const username = getUsername();
+        if (!username) {
+            showMessage('Please login first', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/balance/${username}`);
+            const data = await response.json();
+            if (data.balance !== undefined) {
+                document.getElementById('balance').textContent = data.balance;
+            }
+        } catch (error) {
+            console.error('Error loading balance:', error);
+        }
+    }
+
+    async function addMoney(amount) {
+        const username = getUsername();
+        if (!username) {
+            showMessage('Please login first', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/add-money', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username, amount }),
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                showMessage(`Added ${amount} coins!`, 'success');
+                document.getElementById('balance').textContent = data.balance;
+            } else {
+                showMessage(data.error || 'Failed to add money', 'error');
+            }
+        } catch (error) {
+            console.error('Error adding money:', error);
+            showMessage('Failed to add money', 'error');
+        }
+    }
+
+    // Load data on page load
+    loadBalance();
+</script>
+
+</html>

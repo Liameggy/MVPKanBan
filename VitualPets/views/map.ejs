@@ -19,12 +19,34 @@
         width: 90vmin;
         
     }
+    button {
+        margin: 10px;
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        border: none;
+        border-radius: 5px;
+        background-color: #007BFF;
+        color: white;
+        transition: background-color 0.3s ease;
+    }
+    #outButton {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+    }
     
 </style>
 <body>
     <canvas id="mapCanvas" ></canvas>
     <img id="mapImage" src="/images/map.png" alt="Map Image" style="display:none;">
+        <button id="outButton" onclick="window.location.href='/home?user=' + encodeURIComponent(getUsername())">Back to Home</button>
     <script>
+        function getUsername() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('user') || '';
+        }
+        
         const canvas = document.getElementById('mapCanvas');
         const ctx = canvas.getContext('2d');
         const img = new Image();
@@ -42,11 +64,15 @@
             const y = event.clientY - rect.top;
             const percentX = (x / rect.width) * 100;
             const percentY = (y / rect.height) * 100;
+            
             if (percentX >= 44 && percentX <= 49 && percentY >= 56 && percentY <= 59) {
                 const urlParams = new URLSearchParams(window.location.search);
                 const user = urlParams.get('user') || '';
-                alert('You clicked on the building!');
                 window.location.href = '/shop?user=' + encodeURIComponent(user);
+            } else if (percentX >= 50 && percentX <= 56 && percentY >=49 && percentY <= 56) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const user = urlParams.get('user') || '';
+                window.location.href = '/fishing?user=' + encodeURIComponent(user);
             }
         });
     </script>

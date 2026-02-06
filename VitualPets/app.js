@@ -105,6 +105,9 @@ app.get('/error', (req, res) => {
 app.get('/shop', (req, res) => {
     res.render('shop.ejs');
 });
+app.get('/fishing', (req, res) => {
+    res.render('fishing.ejs');
+});
 app.get('/petpage', (req, res) => {
     const user = req.query.user;
     res.render('petpage.ejs', { user });
@@ -154,6 +157,43 @@ app.get('/api/balance/:username', (req, res) => {
             res.status(404).json({ error: 'User not found' });
         }
         db.close();
+    });
+});
+
+app.post('/api/add-money', bodyParser.json(), (req, res) => {
+    const { username, amount } = req.body;
+
+    if (!username || !amount) {
+        return res.status(400).json({ error: 'Username and amount required' });
+    }
+
+    const db = new sqlite3.Database('./data.db', sqlite3.OPEN_READWRITE, (err) => {
+        if (err) {
+            console.error(err.message);
+            return res.status(500).json({ error: 'Database error' });
+        }
+    });
+
+    db.run('UPDATE Users SET coins = coins + ? WHERE username = ?', [amount, username], function(err) {
+        if (err) {
+            db.close();
+            return res.status(500).json({ error: 'Failed to add money' });
+        }
+
+        if (this.changes === 0) {
+            db.close();
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Get updated balance
+        db.get('SELECT coins FROM Users WHERE username = ?', [username], (err, row) => {
+            if (err) {
+                db.close();
+                return res.status(500).json({ error: 'Failed to retrieve updated balance' });
+            }
+            res.json({ success: true, balance: row.coins });
+            db.close();
+        });
     });
 });
 

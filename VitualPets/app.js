@@ -386,6 +386,75 @@ app.post('/api/sell', bodyParser.json(), (req, res) => {
     });
 });
 
+// Pet endpoints
+app.get('/api/pet/:username', (req, res) => {
+    const username = req.params.username;
+    const db = new sqlite3.Database('./data.db', sqlite3.OPEN_READONLY, (err) => {
+        if (err) {
+            console.error(err.message);
+            return res.status(500).json({ error: 'Database error' });
+        }
+    });
+
+    db.get('SELECT name, type, color1, color2 FROM Pets WHERE username = ?', [username], (err, row) => {
+        if (err) {
+            console.error(err.message);
+            db.close();
+            return res.status(500).json({ error: 'Database error' });
+        }
+        if (row) {
+            res.json(row);
+        } else {
+            res.json(null);
+        }
+        db.close();
+    });
+});
+
+app.post('/api/pet', bodyParser.json(), (req, res) => {
+    const { username, name, type, color1, color2 } = req.body;
+
+    console.log('Received pet save request:', { username, name, type, color1, color2 });
+
+    if (!username || !name || !type || !color1 || !color2) {
+        console.error('Missing required fields');
+        return res.status(400).json({ error: 'All fields required' });
+    }
+
+    const db = new sqlite3.Database('./data.db', sqlite3.OPEN_READWRITE, (err) => {
+        if (err) {
+            console.error('Database connection error:', err.message);
+            return res.status(500).json({ error: 'Database error' });
+        }
+    });
+
+    // Insert or replace pet data
+    const sql = `INSERT INTO Pets (username, name, type, color1, color2, updated_at) 
+                 VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                 ON CONFLICT(username) DO UPDATE SET 
+                 name = excluded.name, 
+                 type = excluded.type, 
+                 color1 = excluded.color1, 
+                 color2 = excluded.color2,
+                 updated_at = CURRENT_TIMESTAMP`;
+    
+    console.log('Executing SQL with params:', [username, name, type, color1, color2]);
+    
+    db.run(sql,
+        [username, name, type, color1, color2],
+        function(err) {
+            if (err) {
+                console.error('SQL execution error:', err.message);
+                db.close();
+                return res.status(500).json({ error: 'Failed to save pet', details: err.message });
+            }
+            console.log('Pet saved successfully');
+            res.json({ success: true });
+            db.close();
+        }
+    );
+});
+
 app.get('/inventory', (req, res) => {
     res.render('inventory.ejs');
 });

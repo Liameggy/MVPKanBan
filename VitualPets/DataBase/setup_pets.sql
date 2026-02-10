@@ -1,0 +1,12 @@
+-- Create pets table
+CREATE TABLE IF NOT EXISTS Pets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL,
+    color1 TEXT NOT NULL,
+    color2 TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(username) REFERENCES Users(username)
+);
